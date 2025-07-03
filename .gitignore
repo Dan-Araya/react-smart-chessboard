@@ -28,3 +28,6 @@ dist-ssr
 
 # vitest coverage output
 coverage
+
+#Pieces
+.all_pieces/*
