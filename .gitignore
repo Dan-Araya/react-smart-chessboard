@@ -30,4 +30,7 @@ dist-ssr
 coverage
 
 #Pieces
-.all_pieces/*
+all_pieces/
+
+#Licence format
+licence_for_chessboard
