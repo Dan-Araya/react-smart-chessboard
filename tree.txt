@@ -1,0 +1,38 @@
+.
+├── eslint.config.js
+├── licence_for_chessboard
+├── LICENSE
+├── node_modules/
+├── package.json
+├── package-lock.json
+├── postcss.config.js
+├── public
+│   ├── pieces
+│   │   └── cburnett
+│   └── vite.svg
+├── README.md
+├── src
+│   ├── assets
+│   │   └── react.svg
+│   ├── components
+│   │   ├── Chessboard.tsx
+│   │   └── index.ts
+│   ├── demo
+│   │   ├── App.tsx
+│   │   ├── index.html
+│   │   └── main.tsx
+│   ├── index.css
+│   ├── index.ts
+│   ├── index.tsx
+│   ├── types
+│   │   ├── index.ts
+│   │   └── move.ts
+│   └── vite-env.d.ts
+├── tailwind.config.js
+├── tree.txt
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
+
+548 directories, 2220 files

@@ -1,23 +1,27 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import { type Piece, type Square } from "chess.js";
-
-interface ChessboardProps {
-    onMove?: (from: Square, to: Square) => void;
-}
-
-type PromotionPiece = 'q' | 'r' | 'b' | 'n';
+import { type ChessboardProps, type PromotionPiece } from "../types";
 
 const boardRanks = [8, 7, 6, 5, 4, 3, 2, 1];
 const boardFiles = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
-export const Chessboard: React.FC<ChessboardProps> = ({ onMove }) => {
+export const Chessboard: React.FC<ChessboardProps> = ({ onMove, initialFen, disabled = false }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [size, setSize] = useState(400);
     const [selected, setSelected] = useState<Square | null>(null);
     const [validMoves, setValidMoves] = useState<Square[]>([]);
-    const [game, setGame] = useState(() => new Chess());
+    const [game, setGame] = useState(() => new Chess(initialFen));
     const [promotionMove, setPromotionMove] = useState<{from: Square, to: Square} | null>(null);
+
+    // Efecto para actualizar el juego cuando cambie el FEN inicial
+    useEffect(() => {
+        if (initialFen) {
+            setGame(new Chess(initialFen));
+            setSelected(null);
+            setValidMoves([]);
+        }
+    }, [initialFen]);
 
     useEffect(() => {
         const updateSize = () => {
@@ -31,6 +35,26 @@ export const Chessboard: React.FC<ChessboardProps> = ({ onMove }) => {
         return () => window.removeEventListener("resize", updateSize);
     }, []);
 
+    // Función para encontrar la posición del rey en jaque
+    const getKingInCheckSquare = (): Square | null => {
+        if (!game.inCheck()) return null;
+
+        const currentColor = game.turn();
+        const board = game.board();
+
+        for (let rank = 0; rank < 8; rank++) {
+            for (let file = 0; file < 8; file++) {
+                const piece = board[rank][file];
+                if (piece && piece.type === 'k' && piece.color === currentColor) {
+                    const fileChar = boardFiles[file];
+                    const rankNum = 8 - rank;
+                    return `${fileChar}${rankNum}` as Square;
+                }
+            }
+        }
+        return null;
+    };
+
     const isPromotionMove = (from: Square, to: Square): boolean => {
         const piece = game.get(from);
         if (!piece || piece.type !== 'p') return false;
@@ -43,10 +67,20 @@ export const Chessboard: React.FC<ChessboardProps> = ({ onMove }) => {
         try {
             const move = game.move({ from, to, promotion });
             if (move) {
-                setGame(new Chess(game.fen()));
+                const newGame = new Chess(game.fen());
+                setGame(newGame);
                 setSelected(null);
                 setValidMoves([]);
-                onMove?.(move.from as Square, move.to as Square);
+
+                // Proporcionar información completa del movimiento y estado del juego
+                onMove?.(move.from as Square, move.to as Square, move.san, {
+                    fen: newGame.fen(),
+                    turn: newGame.turn(),
+                    isCheck: newGame.inCheck(),
+                    isCheckmate: newGame.isCheckmate(),
+                    isStalemate: newGame.isStalemate(),
+                    isDraw: newGame.isDraw()
+                });
                 return true;
             }
         } catch {
@@ -69,6 +103,8 @@ export const Chessboard: React.FC<ChessboardProps> = ({ onMove }) => {
     };
 
     const handleClick = (square: Square) => {
+        if (disabled) return;
+
         // Si hay una pieza seleccionada
         if (selected) {
             // Si hacemos clic en la misma pieza, deseleccionar
@@ -116,6 +152,8 @@ export const Chessboard: React.FC<ChessboardProps> = ({ onMove }) => {
         }
     };
 
+    const kingInCheckSquare = getKingInCheckSquare();
+
     return (
         <div ref={containerRef} className="w-full max-w-[min(100%,600px)] mx-auto">
             <div
@@ -129,17 +167,20 @@ export const Chessboard: React.FC<ChessboardProps> = ({ onMove }) => {
                         const isDark = (x + y) % 2 === 1;
                         const isSelected = square === selected;
                         const isHighlighted = validMoves.includes(square);
+                        const isKingInCheck = square === kingInCheckSquare;
 
                         return (
                             <div
                                 key={square}
                                 onClick={() => handleClick(square)}
                                 className={`relative flex items-center justify-center cursor-pointer ${
-                                    isSelected
-                                        ? "bg-blue-500"
-                                        : isDark
-                                            ? "bg-gray-500"
-                                            : "bg-gray-200"
+                                    isKingInCheck
+                                        ? "bg-red-500"
+                                        : isSelected
+                                            ? "bg-blue-500"
+                                            : isDark
+                                                ? "bg-gray-500"
+                                                : "bg-gray-200"
                                 }`}
                                 style={{
                                     width: size / 8,
